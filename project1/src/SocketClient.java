@@ -14,9 +14,15 @@ public class SocketClient {
     private int portB;
     private int secretA;
 
-
     private int portC;
     private int secretB;
+
+    private int secretC;
+    private int numD;
+    private int lenD;
+    private char cD;
+
+    private int secretD;
 
     public static void main(String [] args) throws IOException {
         SocketClient client = new SocketClient();
@@ -31,6 +37,11 @@ public class SocketClient {
         DatagramSocket clientSocket = new DatagramSocket();
         clientSocket.connect(IPAddress, port);
         clientSocket.setSoTimeout(500);
+        return clientSocket;
+    }
+
+    private Socket connectTCP(int port) throws IOException {
+        Socket clientSocket = new Socket(HOST, port);
         return clientSocket;
     }
 
@@ -136,5 +147,59 @@ public class SocketClient {
         System.out.println("tcpPort:" + tcpPort);
         System.out.println("psecert:" + psecret);
 
+        clientSocket.close();
+    }
+
+    public static byte[] readBytes(Socket socket, int len) throws IOException {
+        InputStream in = socket.getInputStream();
+        DataInputStream dis = new DataInputStream(in);
+        byte[] data = new byte[len];
+        try {
+            dis.readFully(data);
+        } catch(Exception e) {
+            System.out.println(e.toString());
+            e.printStackTrace();
+        }
+        return data;
+    }
+
+    public void stageC() throws IOException {
+        Socket clientSocket = connectTCP(portC);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(12);
+        putHeader(byteBuffer, secretB, 1, 0);
+        byte[] sendData = byteBuffer.array();
+        clientSocket.getOutputStream().write(sendData);
+        byte[] receiveData = readBytes(clientSocket, 13 + 12);
+
+        ByteBuffer results = ByteBuffer.allocate(25);
+        results.put(receiveData);
+        numD = results.getInt(12);
+        lenD = results.getInt(16);
+        secretC = results.getInt(20);
+        cD = results.getChar(24);
+
+        clientSocket.close();
+    }
+
+    public void stageD() throws IOException {
+        Socket clientSocket = connectTCP(portC);
+        for (int i = 0; i < numD; i ++) {
+            ByteBuffer byteBuffer = ByteBuffer.allocate(12 + 4 + lenB);
+            putHeader(byteBuffer, secretC, 1, 4 + lenB);
+            byteBuffer.putInt(i);
+            for (int j = 0; j < lenD; j ++)
+                byteBuffer.putChar(cD);
+             byte[] sendData = byteBuffer.array();
+            clientSocket.getOutputStream().write(sendData);
+
+        }
+        byte[] receiveData = readBytes(clientSocket, 12 + 4);
+        ByteBuffer results = ByteBuffer.allocate(16);
+        results.put(receiveData);
+        secretD = results.getInt(12);
+
+        System.out.println("secretD: " + secretD);
+
+        clientSocket.close();
     }
 }
