@@ -26,8 +26,7 @@ public class Project1Client {
         Project1Client client = new Project1Client();
         client.stageA();
         client.stageB();
-        client.stageC();
-        client.stageD();
+        client.stageD(client.stageC());
     }
 
     public Project1Client() throws UnknownHostException {
@@ -166,13 +165,9 @@ public class Project1Client {
         return data;
     }
 
-    public void stageC() throws IOException {
+    public Socket stageC() throws IOException {
         Socket clientSocket = connectTCP(portC);
-        ByteBuffer byteBuffer = ByteBuffer.allocate(12);
-        putHeader(byteBuffer, secretB, 1, 0);
-        byte[] sendData = byteBuffer.array();
-        clientSocket.getOutputStream().write(sendData);
-        byte[] receiveData = readBytes(clientSocket, 13 + 12);
+        byte[] receiveData = readBytes(clientSocket, 28);
 
         ByteBuffer results = ByteBuffer.allocate(100);
         results.put(receiveData);
@@ -186,15 +181,14 @@ public class Project1Client {
         System.out.println("secretC:" + secretC);
         System.out.println("cD:" + cD);
 
-        clientSocket.close();
+        return clientSocket;
     }
 
-    public void stageD() throws IOException {
-        Socket clientSocket = connectTCP(portC);
-        ByteBuffer byteBuffer = ByteBuffer.allocate(12 + lenD);
+    public void stageD(Socket clientSocket) throws IOException {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(12 + alignBytes(lenD));
         putHeader(byteBuffer, secretC, 1, lenD);
-        for (int j = 0; j < lenD; j ++) {
-            byteBuffer.put(j + 12, cD);
+        for (int i = 0; i < lenD; i ++) {
+            byteBuffer.put(i + 12, cD);
         }
         byte[] sendData = byteBuffer.array();
 
