@@ -2,9 +2,7 @@ import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
 
-public class SocketClient {
-
-    final int PORT = 12235;
+public class Project1Client {
     final String HOST = "amlia.cs.washington.edu";
 
     InetAddress IPAddress;
@@ -20,23 +18,26 @@ public class SocketClient {
     private int secretC;
     private int numD;
     private int lenD;
-    private char cD;
+    private byte cD;
 
     private int secretD;
 
     public static void main(String [] args) throws IOException {
-        SocketClient client = new SocketClient();
+        Project1Client client = new Project1Client();
         client.stageA();
+        client.stageB();
+        client.stageC();
+        client.stageD();
     }
 
-    public SocketClient() throws UnknownHostException {
+    public Project1Client() throws UnknownHostException {
         IPAddress = InetAddress.getByName(HOST);
     }
 
     private DatagramSocket connectUDP(int port) throws UnknownHostException, SocketException {
         DatagramSocket clientSocket = new DatagramSocket();
         clientSocket.connect(IPAddress, port);
-        clientSocket.setSoTimeout(500);
+        clientSocket.setSoTimeout(1000);
         return clientSocket;
     }
 
@@ -54,7 +55,7 @@ public class SocketClient {
 
 
     public void stageA() throws IOException {
-        DatagramSocket clientSocket = connectUDP(PORT);
+        DatagramSocket clientSocket = connectUDP(Util.PORT);
         byte[] sendData;
         byte[] receiveData = new byte[100];
         //String sentence = inFromUser.readLine();
@@ -68,7 +69,7 @@ public class SocketClient {
 
         sendData = byteBuffer.array();
 
-        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, PORT);
+        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, Util.PORT);
         while(true) {
             try {
                 clientSocket.send(sendPacket);
@@ -83,24 +84,22 @@ public class SocketClient {
 
         ByteBuffer results = ByteBuffer.allocate(100);
         results.put(receiveData);
-        int num = results.getInt(12);
-        int len = results.getInt(16);
-        int port = results.getInt(20);
-        int psecret = results.getInt(24);
+        numB = results.getInt(12);
+        lenB = results.getInt(16);
+        portB = results.getInt(20);
+        secretA = results.getInt(24);
 
-        System.out.println("Num:" + num);
-        System.out.println("len:" + len);
-        System.out.println("PORT:" + port);
-        System.out.println("secret:" + psecret);
-
-        numB = num;
-        lenB = len;
-        portB = port;
-        secretA = psecret;
+        System.out.println("numB:" + numB);
+        System.out.println("lenB:" + lenB);
+        System.out.println("portB:" + portB);
+        System.out.println("secretA:" + secretA);
 
         clientSocket.close();
     }
 
+    public static int alignBytes(int num) {
+        return ((num + 3) / 4) * 4;
+    }
 
     public void stageB() throws IOException {
         DatagramSocket clientSocket = connectUDP(portB);
@@ -108,26 +107,30 @@ public class SocketClient {
         for (int i = 0; i < numB; i ++) {
 
             while (true) {
-                ByteBuffer byteBuffer = ByteBuffer.allocate(12 + 4 + lenB);
+                try {
+                    int lenAligned = alignBytes(lenB + 4);
+                    ByteBuffer byteBuffer = ByteBuffer.allocate(12 + lenAligned);
+                    putHeader(byteBuffer, secretA, 1, 4 + lenB);
+                    byteBuffer.putInt(i);
 
-                putHeader(byteBuffer, secretA, 1, 4 + lenB);
-                byteBuffer.putInt(i);
-                byteBuffer.put(new byte[lenB]);
+                    byte[] sendData = byteBuffer.array();
+                    DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, portB);
+                    clientSocket.send(sendPacket);
+                    byte[] receiveData = new byte[100];
+                    DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
+                    System.out.println("Receive " + i);
+                    clientSocket.receive(receivePacket);
 
-                byte[] sendData = byteBuffer.array();
-                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, portB);
-                clientSocket.send(sendPacket);
-                byte[] receiveData = new byte[100];
-                DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                clientSocket.receive(receivePacket);
+                    ByteBuffer results = ByteBuffer.allocate(100);
+                    results.put(receiveData);
+                    int acked = results.getInt(12);
 
-                ByteBuffer results = ByteBuffer.allocate(100);
-                results.put(receiveData);
-                int acked = results.getInt(12);
-
-                if (acked == i)
-                    break;
+                    if (acked == i)
+                        break;
+                } catch(Exception e) {
+                    System.out.println(e.toString());
+                }
             }
         }
 
@@ -145,7 +148,7 @@ public class SocketClient {
         secretB = psecret;
 
         System.out.println("tcpPort:" + tcpPort);
-        System.out.println("psecert:" + psecret);
+        System.out.println("secretB:" + psecret);
 
         clientSocket.close();
     }
@@ -171,30 +174,37 @@ public class SocketClient {
         clientSocket.getOutputStream().write(sendData);
         byte[] receiveData = readBytes(clientSocket, 13 + 12);
 
-        ByteBuffer results = ByteBuffer.allocate(25);
+        ByteBuffer results = ByteBuffer.allocate(100);
         results.put(receiveData);
         numD = results.getInt(12);
         lenD = results.getInt(16);
         secretC = results.getInt(20);
-        cD = results.getChar(24);
+        cD = results.get(24);
+
+        System.out.println("numD:" + numD);
+        System.out.println("lenD:" + lenD);
+        System.out.println("secretC:" + secretC);
+        System.out.println("cD:" + cD);
 
         clientSocket.close();
     }
 
     public void stageD() throws IOException {
         Socket clientSocket = connectTCP(portC);
-        for (int i = 0; i < numD; i ++) {
-            ByteBuffer byteBuffer = ByteBuffer.allocate(12 + 4 + lenB);
-            putHeader(byteBuffer, secretC, 1, 4 + lenB);
-            byteBuffer.putInt(i);
-            for (int j = 0; j < lenD; j ++)
-                byteBuffer.putChar(cD);
-             byte[] sendData = byteBuffer.array();
-            clientSocket.getOutputStream().write(sendData);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(12 + lenD);
+        putHeader(byteBuffer, secretC, 1, lenD);
+        for (int j = 0; j < lenD; j ++) {
+            byteBuffer.put(j + 12, cD);
+        }
+        byte[] sendData = byteBuffer.array();
 
+        for (int i = 0; i < numD; i ++) {
+            DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
+            dos.write(sendData, 0, sendData.length);
+            dos.flush();
         }
         byte[] receiveData = readBytes(clientSocket, 12 + 4);
-        ByteBuffer results = ByteBuffer.allocate(16);
+        ByteBuffer results = ByteBuffer.allocate(100);
         results.put(receiveData);
         secretD = results.getInt(12);
 
