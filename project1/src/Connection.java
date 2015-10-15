@@ -1,3 +1,4 @@
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
@@ -109,8 +110,11 @@ public class Connection implements Runnable {
                 byte c = (byte) (rand.nextInt(10));
                 resCBuffer.put(c);
 
-                clientSocket.getOutputStream().write(resCBuffer.array());
-                clientSocket.getOutputStream().flush();
+
+                DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
+                byte[] sendData = resCBuffer.array();
+                dos.write(sendData, 0, sendData.length);
+                dos.flush();
 
                 // Stage D
                 for (int i = 0; i < num2; i ++) {
@@ -137,8 +141,9 @@ public class Connection implements Runnable {
                 int secretD = rand.nextInt(1000);
                 resDBuffer.putInt(secretD);
 
-                clientSocket.getOutputStream().write(resDBuffer.array());
-                clientSocket.getOutputStream().flush();
+                sendData = resDBuffer.array();
+                dos.write(sendData, 0, sendData.length);
+                dos.flush();
 
                 listenSocket.close();
 
