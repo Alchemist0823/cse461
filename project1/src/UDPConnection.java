@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
@@ -27,7 +28,8 @@ public class UDPConnection implements Runnable {
 
             byteBuffer.putInt(rand.nextInt(10) + 5);
             byteBuffer.putInt(rand.nextInt(20) + 10);
-            byteBuffer.putInt(rand.nextInt(10000) + 10000);
+            int portB = rand.nextInt(10000) + 10000;
+            byteBuffer.putInt(portB);
             byteBuffer.putInt(rand.nextInt(1000));
 
             byte[] responseData = byteBuffer.array();
@@ -35,6 +37,35 @@ public class UDPConnection implements Runnable {
                     packet.getAddress(), packet.getPort());
             try {
                 socket.send(response);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                DatagramSocket socketB = new DatagramSocket(portB);
+                while(true) {
+                    DatagramPacket packet = new DatagramPacket(data, data.length);
+                    socketB.receive(packet);
+
+                    byte[] dataB = this.packet.getData();
+                    Packet contentB = new Packet(dataB);
+                    int pid = contentB.getBuffer().getInt(12);
+
+                    if (rand.nextFloat() < 0.8f) {
+                        ByteBuffer resBuffer = ByteBuffer.allocate(12 + 4);
+                        Util.putHeader(resBuffer, 4, contentB.getSecret(), 1, content.getStudentNum());
+                        resBuffer.putInt(pid);
+
+                        responseData = resBuffer.array();
+
+                        DatagramPacket responseB = new DatagramPacket(responseData, responseData.length,
+                                packet.getAddress(), packet.getPort());
+
+                        socketB.send(responseB);
+                    }
+                }
+
+            } catch (SocketException e) {
+                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
