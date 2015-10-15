@@ -26,4 +26,8 @@ public class Util {
         }
         return data;
     }
+
+    public static int alignBytes(int num) {
+        return ((num + 3) / 4) * 4;
+    }
 }

@@ -89,10 +89,6 @@ public class Project1Client {
         clientSocket.close();
     }
 
-    public static int alignBytes(int num) {
-        return ((num + 3) / 4) * 4;
-    }
-
     public void stageB() throws IOException {
         DatagramSocket clientSocket = connectUDP(portB);
 
@@ -100,7 +96,7 @@ public class Project1Client {
 
             while (true) {
                 try {
-                    int lenAligned = alignBytes(lenB + 4);
+                    int lenAligned = Util.alignBytes(lenB + 4);
                     ByteBuffer byteBuffer = ByteBuffer.allocate(12 + lenAligned);
                     Util.putHeader(byteBuffer, 4 + lenB, secretA, 1, STUDENT_NUM);
                     byteBuffer.putInt(i);
@@ -165,7 +161,7 @@ public class Project1Client {
     }
 
     public void stageD(Socket clientSocket) throws IOException {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(12 + alignBytes(lenD));
+        ByteBuffer byteBuffer = ByteBuffer.allocate(12 + Util.alignBytes(lenD));
         Util.putHeader(byteBuffer, lenD, secretC, 1, STUDENT_NUM);
         for (int i = 0; i < lenD; i ++) {
             byteBuffer.put(i + 12, cD);

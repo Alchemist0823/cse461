@@ -88,13 +88,13 @@ public class Connection implements Runnable {
                 DatagramPacket responseB2 = new DatagramPacket(responseData, responseData.length,
                         address, clientPortB);
 
-                socketB.send(responseB2);
-                socketB.close();
 
                 // Stage C
-
                 ServerSocket listenSocket = new ServerSocket(tcpPort);
                 System.out.println("server start tcp listening... ... ...");
+                
+                socketB.send(responseB2);
+                socketB.close();
 
                 Socket clientSocket = listenSocket.accept();
 
@@ -118,7 +118,7 @@ public class Connection implements Runnable {
 
                 // Stage D
                 for (int i = 0; i < num2; i ++) {
-                    byte[] resDdata = Util.readBytes(clientSocket, 12 + len2);
+                    byte[] resDdata = Util.readBytes(clientSocket, 12 + Util.alignBytes(len2));
                     Packet contentD = new Packet(resDdata);
                     if (contentD.getSecret() == secretC && contentD.getLen() == len2) {
                         boolean t = true;
