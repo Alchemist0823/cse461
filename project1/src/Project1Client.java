@@ -3,7 +3,8 @@ import java.net.*;
 import java.nio.ByteBuffer;
 
 public class Project1Client {
-    final String HOST = "amlia.cs.washington.edu";
+    final static String HOST = "amlia.cs.washington.edu";
+    final static int STUDENT_NUM = 500;
 
     InetAddress IPAddress;
 
@@ -45,14 +46,6 @@ public class Project1Client {
         return clientSocket;
     }
 
-    public void putHeader(ByteBuffer buffer, int secret, int step, int payloadLen) {
-        buffer.putInt(payloadLen);
-        buffer.putInt(secret);
-        buffer.putShort((short) step);
-        buffer.putShort((short) 500);
-    }
-
-
     public void stageA() throws IOException {
         DatagramSocket clientSocket = connectUDP(Util.PORT);
         byte[] sendData;
@@ -62,7 +55,7 @@ public class Project1Client {
         String sentence = "hello world\0";
 
         ByteBuffer byteBuffer = ByteBuffer.allocate(12 + sentence.length());
-        putHeader(byteBuffer, 0, 1, sentence.length());
+        Util.putHeader(byteBuffer, sentence.length(), 0, 1, STUDENT_NUM);
         byteBuffer.put(sentence.getBytes());
         //output.write(sentence.getBytes());
 
@@ -109,7 +102,7 @@ public class Project1Client {
                 try {
                     int lenAligned = alignBytes(lenB + 4);
                     ByteBuffer byteBuffer = ByteBuffer.allocate(12 + lenAligned);
-                    putHeader(byteBuffer, secretA, 1, 4 + lenB);
+                    Util.putHeader(byteBuffer, 4 + lenB, secretA, 1, STUDENT_NUM);
                     byteBuffer.putInt(i);
 
                     byte[] sendData = byteBuffer.array();
@@ -186,7 +179,7 @@ public class Project1Client {
 
     public void stageD(Socket clientSocket) throws IOException {
         ByteBuffer byteBuffer = ByteBuffer.allocate(12 + alignBytes(lenD));
-        putHeader(byteBuffer, secretC, 1, lenD);
+        Util.putHeader(byteBuffer, lenD, secretC, 1, STUDENT_NUM);
         for (int i = 0; i < lenD; i ++) {
             byteBuffer.put(i + 12, cD);
         }
