@@ -1,7 +1,5 @@
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketException;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
@@ -26,11 +24,13 @@ public class UDPConnection implements Runnable {
             ByteBuffer byteBuffer = ByteBuffer.allocate(12 + 16);
             Util.putHeader(byteBuffer, 16, content.getSecret(), 2, content.getStudentNum());
 
-            byteBuffer.putInt(rand.nextInt(10) + 5);
+            int num = rand.nextInt(10) + 5;
+            byteBuffer.putInt(num);
             byteBuffer.putInt(rand.nextInt(20) + 10);
             int portB = rand.nextInt(10000) + 10000;
             byteBuffer.putInt(portB);
-            byteBuffer.putInt(rand.nextInt(1000));
+            int secretA = rand.nextInt(1000);
+            byteBuffer.putInt(secretA);
 
             byte[] responseData = byteBuffer.array();
             DatagramPacket response = new DatagramPacket(responseData, responseData.length,
@@ -42,27 +42,45 @@ public class UDPConnection implements Runnable {
             }
             try {
                 DatagramSocket socketB = new DatagramSocket(portB);
-                while(true) {
+                InetAddress address = null;
+
+                for(int i = 0; i < num; i ++) {
                     DatagramPacket packet = new DatagramPacket(data, data.length);
                     socketB.receive(packet);
 
                     byte[] dataB = this.packet.getData();
                     Packet contentB = new Packet(dataB);
-                    int pid = contentB.getBuffer().getInt(12);
 
-                    if (rand.nextFloat() < 0.8f) {
+                    if (rand.nextFloat() < 0.8f && secretA == contentB.getSecret()) {
+                        int pid = contentB.getBuffer().getInt(12);
+
                         ByteBuffer resBuffer = ByteBuffer.allocate(12 + 4);
                         Util.putHeader(resBuffer, 4, contentB.getSecret(), 1, content.getStudentNum());
                         resBuffer.putInt(pid);
 
                         responseData = resBuffer.array();
 
+                        address = packet.getAddress();
                         DatagramPacket responseB = new DatagramPacket(responseData, responseData.length,
-                                packet.getAddress(), packet.getPort());
+                                address, packet.getPort());
 
                         socketB.send(responseB);
+                    } else {
+                        i --;
                     }
                 }
+
+                ByteBuffer resBuffer = ByteBuffer.allocate(12 + 8);
+                Util.putHeader(resBuffer, 8, secretA, 2, content.getStudentNum());
+                resBuffer.putInt(rand.nextInt(10000) + 10000);
+                resBuffer.putInt(rand.nextInt(1000));
+
+                responseData = resBuffer.array();
+
+                DatagramPacket responseB2 = new DatagramPacket(responseData, responseData.length,
+                        address, portB);
+
+                socketB.send(responseB2);
 
             } catch (SocketException e) {
                 e.printStackTrace();
