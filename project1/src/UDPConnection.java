@@ -43,6 +43,8 @@ public class UDPConnection implements Runnable {
             try {
                 DatagramSocket socketB = new DatagramSocket(portB);
                 InetAddress address = null;
+                int clientPortB = 0;
+         
 
                 for(int i = 0; i < num; i ++) {
                     DatagramPacket packet = new DatagramPacket(data, data.length);
@@ -61,14 +63,16 @@ public class UDPConnection implements Runnable {
                         responseData = resBuffer.array();
 
                         address = packet.getAddress();
+                        clientPortB = packet.getPort();
                         DatagramPacket responseB = new DatagramPacket(responseData, responseData.length,
-                                address, packet.getPort());
+                                address, clientPortB);
 
                         socketB.send(responseB);
                     } else {
                         i --;
                     }
                 }
+                System.out.println("b2");
 
                 ByteBuffer resBuffer = ByteBuffer.allocate(12 + 8);
                 Util.putHeader(resBuffer, 8, secretA, 2, content.getStudentNum());
@@ -78,7 +82,7 @@ public class UDPConnection implements Runnable {
                 responseData = resBuffer.array();
 
                 DatagramPacket responseB2 = new DatagramPacket(responseData, responseData.length,
-                        address, portB);
+                        address, clientPortB);
 
                 socketB.send(responseB2);
 
