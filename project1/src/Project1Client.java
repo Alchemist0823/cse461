@@ -145,22 +145,9 @@ public class Project1Client {
         clientSocket.close();
     }
 
-    public static byte[] readBytes(Socket socket, int len) throws IOException {
-        InputStream in = socket.getInputStream();
-        DataInputStream dis = new DataInputStream(in);
-        byte[] data = new byte[len];
-        try {
-            dis.readFully(data);
-        } catch(Exception e) {
-            System.out.println(e.toString());
-            e.printStackTrace();
-        }
-        return data;
-    }
-
     public Socket stageC() throws IOException {
         Socket clientSocket = connectTCP(portC);
-        byte[] receiveData = readBytes(clientSocket, 28);
+        byte[] receiveData = Util.readBytes(clientSocket, 28);
 
         ByteBuffer results = ByteBuffer.allocate(100);
         results.put(receiveData);
@@ -190,7 +177,7 @@ public class Project1Client {
             dos.write(sendData, 0, sendData.length);
             dos.flush();
         }
-        byte[] receiveData = readBytes(clientSocket, 12 + 4);
+        byte[] receiveData = Util.readBytes(clientSocket, 12 + 4);
         ByteBuffer results = ByteBuffer.allocate(100);
         results.put(receiveData);
         secretD = results.getInt(12);

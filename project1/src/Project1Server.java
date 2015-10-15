@@ -1,30 +1,24 @@
-import java.io.*;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.Socket;
 
 public class Project1Server {
+    public static void main (String args[])
+    {
+        try{
+            int serverPort = Util.PORT;
+            DatagramSocket serverSocket = new DatagramSocket(serverPort);
 
-    public static void main(String[] args) throws IOException {
-        DatagramSocket serverSocket = new DatagramSocket(Util.PORT);
-        byte[] receiveData = new byte[100];
-        byte[] sendData = new byte[1024];
-        while (true) {
-            DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-            serverSocket.receive(receivePacket);
+            System.out.println("server start listening... ... ...");
 
-            //new Thread(new UDPConnection(serverSocket, receivePacket)).start();
+            while(true) {
+                byte[] receiveData = new byte[65536];
+                DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                serverSocket.receive(receivePacket);
 
-
-            String sentence = new String(receivePacket.getData());
-            System.out.println("RECEIVED: " + sentence);
-            InetAddress IPAddress = receivePacket.getAddress();
-            int port = receivePacket.getPort();
-            String capitalizedSentence = sentence.toUpperCase();
-            sendData = capitalizedSentence.getBytes();
-            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, port);
-            serverSocket.send(sendPacket);
-        }
+                new Thread(new Connection(serverSocket, receivePacket)).start();
+            }
+        } catch(IOException e) {
+            System.out.println("Listen :"+e.getMessage());}
     }
 }
