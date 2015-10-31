@@ -27,8 +27,11 @@ public class NonConnectProxyConnection implements Runnable {
             while ((info = reader.readLine()) != null) {
                 if (info.startsWith("GET") || info.startsWith("POST") || info.startsWith("PUT") || info.startsWith("CONNECT")) {
                     info = info.replace("HTTP/1.1", "HTTP/1.0");
-                    uri = info.split(" +")[2];
+                    uri = info.split(" +")[1];
                 }
+
+                if (info.equals(""))
+                    break;
 
                 int splitPos = info.indexOf(": ");
                 if (splitPos != -1) {
@@ -52,6 +55,7 @@ public class NonConnectProxyConnection implements Runnable {
 
                 header += info + "\n\r";
             }
+            header += "\n\r\n\r";
             System.out.println(header);
 
             if (hostName != null) {
@@ -64,10 +68,12 @@ public class NonConnectProxyConnection implements Runnable {
                     }
                 }
                 if (port != -1) {
+                    System.out.println(hostName + ":" + port);
                     Socket webSocket = new Socket(hostName, port);
 
                     OutputStreamWriter writer = new OutputStreamWriter(webSocket.getOutputStream());
                     writer.write(header);
+                    writer.flush();
                     pipe(webSocket.getInputStream(), os);
                     webSocket.close();
                 }
@@ -85,6 +91,7 @@ public class NonConnectProxyConnection implements Runnable {
         byte[] buffer = new byte[1024];
         while ((n = is.read(buffer)) > -1) {
             os.write(buffer, 0, n);   // Don't allow any extra bytes to creep in, final write
+            os.flush();
         }
         is.close();
     }
