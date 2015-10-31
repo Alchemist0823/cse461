@@ -3,6 +3,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.Date;
 
 public class NonConnectHttpProxy {
 
@@ -12,7 +13,7 @@ public class NonConnectHttpProxy {
 
         try {
             ServerSocket listenSocket = new ServerSocket(TCP_PORT);
-            System.out.println("server start tcp listening... ... ...");
+            System.out.println(new Date() + " - Proxy listening on 0.0.0.0:" + TCP_PORT);
 
             while(true) {
                 Socket clientSocket = listenSocket.accept();

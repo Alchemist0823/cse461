@@ -3,6 +3,7 @@ import jdk.internal.util.xml.impl.Input;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Date;
 
 public class NonConnectProxyConnection implements Runnable {
 
@@ -25,9 +26,11 @@ public class NonConnectProxyConnection implements Runnable {
             int port = -1;
             String info;
             String header = "";
+            String firstLine = "";
 
             while ((info = reader.readLine()) != null) {
                 if (info.startsWith("GET") || info.startsWith("POST") || info.startsWith("PUT") || info.startsWith("CONNECT")) {
+                    firstLine = info;
                     info = info.replace("HTTP/1.1", "HTTP/1.0");
                     uri = info.split(" +")[1];
                 }
@@ -62,7 +65,7 @@ public class NonConnectProxyConnection implements Runnable {
                 header += info + "\r\n";
             }
             header += "\r\n";
-            System.out.println(header);
+            System.out.println(new Date() + " - >>> " + firstLine);
 
             if (hostName != null) {
                 if (port == -1) {
@@ -102,8 +105,9 @@ public class NonConnectProxyConnection implements Runnable {
                         // cSocket.shutdownInput(); // for experiment
                     }
 
-                    os.close();
+                    serverResponse.close();
                     webSocket.close();
+                    os.close();
                 }
             }
 
