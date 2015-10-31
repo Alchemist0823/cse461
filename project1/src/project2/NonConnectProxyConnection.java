@@ -1,4 +1,6 @@
 package project2;
+import jdk.internal.util.xml.impl.Input;
+
 import java.io.*;
 import java.net.Socket;
 
@@ -50,12 +52,16 @@ public class NonConnectProxyConnection implements Runnable {
                             value = "close";
                             info = param + ": " + value;
                             break;
+                        case "Proxy-Connection":
+                            value = "close";
+                            info = param + ": " + value;
+                            break;
                     }
                 }
 
-                header += info + "\n\r";
+                header += info + "\r\n";
             }
-            header += "\n\r\n\r";
+            header += "\r\n";
             System.out.println(header);
 
             if (hostName != null) {
@@ -74,7 +80,29 @@ public class NonConnectProxyConnection implements Runnable {
                     OutputStreamWriter writer = new OutputStreamWriter(webSocket.getOutputStream());
                     writer.write(header);
                     writer.flush();
-                    pipe(webSocket.getInputStream(), os);
+
+                    InputStream serverResponse = webSocket.getInputStream();
+
+                    // a buffer to hold the response from server
+                    // and send to the client
+                    byte[] buf = new byte[32767];
+                    int numOfBytes = serverResponse.read(buf);
+
+                    // keep reading from the buffer until there's nothing to be read
+                    while (numOfBytes != -1) {
+                        // write the response to client
+                        // and flush the writer
+                        os.write(buf, 0, numOfBytes);
+                        os.flush();
+
+                        // read the next line of the response
+                        numOfBytes = serverResponse.read(buf);
+
+                        // cSocket.shutdownOutput(); // for experiment
+                        // cSocket.shutdownInput(); // for experiment
+                    }
+
+                    os.close();
                     webSocket.close();
                 }
             }
@@ -84,15 +112,5 @@ public class NonConnectProxyConnection implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void pipe(InputStream is, OutputStream os) throws IOException {
-        int n;
-        byte[] buffer = new byte[1024];
-        while ((n = is.read(buffer)) > -1) {
-            os.write(buffer, 0, n);   // Don't allow any extra bytes to creep in, final write
-            os.flush();
-        }
-        is.close();
     }
 }
