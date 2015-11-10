@@ -58,7 +58,7 @@ public class ConnectProxyConnection implements Runnable {
             }
             header += "\r\n";
 
-            System.out.println(new Date() + " - >>> " + firstLine);
+            System.out.println(new Date() + " - >>> " + header);
 
             if (hostName != null) {
                 if (port == -1) {
@@ -73,7 +73,7 @@ public class ConnectProxyConnection implements Runnable {
                     try {
                         Socket webSocket = new Socket(hostName, port);
                         OutputStreamWriter writer = new OutputStreamWriter(clientOutput);
-                        writer.write("HTTP/1.1 200 OK" + "\r\n");
+                        writer.write("HTTP/1.1 200 OK" + "\r\n\r\n");
                         writer.flush();
 
                         InputStream serverInput = webSocket.getInputStream();
@@ -90,7 +90,7 @@ public class ConnectProxyConnection implements Runnable {
                                         ch = clientInput.read();
                                         if (ch != -1) {
                                             serverOutput.write(ch);
-                                            System.out.print(ch);
+                                            System.out.print((char)ch);
                                         } else {
                                             System.out.println("client stream closed");
                                         }
@@ -132,7 +132,7 @@ public class ConnectProxyConnection implements Runnable {
                         }
                     } catch (UnknownHostException e) {
                         OutputStreamWriter writer = new OutputStreamWriter(clientOutput);
-                        writer.write("HTTP/1.1 502 Bad Gateway" + "\r\n");
+                        writer.write("HTTP/1.1 502 Bad Gateway" + "\r\n\r\n");
                         writer.flush();
                         socket.close();
                     }
