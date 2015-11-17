@@ -35,8 +35,8 @@ public class ProxyConnection implements Runnable {
             
             HTTPHeader httpHeader = new HTTPHeader(header);
 
-            System.out.println(new Date().toString() + " >>> " + httpHeader.hostName + " " + httpHeader.port + " " + httpHeader.uri);
-            //System.out.println(httpHeader.newHeader);
+            if (httpHeader.hostName != null)
+            	System.out.println(new Date().toString() + " >>> " + httpHeader.newHeader.substring(0, httpHeader.newHeader.indexOf(" ")) + " " + httpHeader.hostName + " " + httpHeader.port + " " + httpHeader.uri);
 
             if (httpHeader.method == null || httpHeader.hostName == null || httpHeader.port == -1)
                 return;
@@ -61,26 +61,28 @@ public class ProxyConnection implements Runnable {
 
                 InputStream serverResponse = webSocket.getInputStream();
 
-                byte[] buf = new byte[32767];
-                int numOfBytes = serverResponse.read(buf);
-
-                while (numOfBytes != -1) {
-
-                    clientOutput.write(buf, 0, numOfBytes);
-                    clientOutput.flush();
-
-                    numOfBytes = serverResponse.read(buf);
+                try {
+	                byte[] buf = new byte[32767];
+	                int numOfBytes = serverResponse.read(buf);
+	
+	                while (numOfBytes != -1) {
+	
+	                    clientOutput.write(buf, 0, numOfBytes);
+	                    clientOutput.flush();
+	
+	                    numOfBytes = serverResponse.read(buf);
+	                }
+                } catch (Throwable t) {
+                } finally {
+	                serverResponse.close();
+	                webSocket.close();
+	                clientOutput.close();
                 }
-
-                serverResponse.close();
-                webSocket.close();
-                clientOutput.close();
-
             } else if (httpHeader.method.equals("CONNECT")) {
                 try {
                     Socket webSocket = new Socket(httpHeader.hostName, httpHeader.port);
                     OutputStreamWriter writer = new OutputStreamWriter(clientOutput);
-                    writer.write("HTTP/1.1 200 OK" + "\r\n\r\n");
+                    writer.write("HTTP 200 OK" + "\r\n\r\n");
                     writer.flush();
 
                     InputStream serverInput = webSocket.getInputStream();
@@ -124,7 +126,7 @@ public class ProxyConnection implements Runnable {
                             }
                         }
                     } catch (Throwable t) {
-                        t.printStackTrace(System.err);
+                        //t.printStackTrace(System.err);
                     } finally {
                         try {
                             clientInput.close();
@@ -139,7 +141,7 @@ public class ProxyConnection implements Runnable {
                     }
                 } catch (UnknownHostException e) {
                     OutputStreamWriter writer = new OutputStreamWriter(clientOutput);
-                    writer.write("HTTP/1.1 502 Bad Gateway" + "\r\n\r\n");
+                    writer.write("HTTP 502 Bad Gateway" + "\r\n\r\n");
                     writer.flush();
                 }
             }

@@ -20,7 +20,7 @@ public class HttpProxy {
             while (true) {
                 Socket clientSocket = listenSocket.accept();
 
-                System.out.println("accepted client");
+                //System.out.println("accepted client");
 
                 new Thread(new ProxyConnection(clientSocket)).run();
             }
