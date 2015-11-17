@@ -97,7 +97,7 @@ public class ProxyConnection implements Runnable {
                                     ch = clientInput.read();
                                     if (ch != -1) {
                                         serverOutput.write(ch);
-                                        System.out.print((char) ch);
+                                        //System.out.print((char) ch);
                                     } else {
                                         System.out.println("client stream closed");
                                     }
@@ -110,7 +110,7 @@ public class ProxyConnection implements Runnable {
                                     ch = serverInput.read();
                                     if (ch != -1) {
                                         clientOutput.write(ch);
-                                        System.out.print(ch);
+                                        //System.out.print(ch);
                                     } else {
                                         System.out.println("server stream closed");
                                     }
